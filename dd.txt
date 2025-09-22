@@ -1,0 +1,129 @@
+Got it 👍 let’s debug this step by step.
+
+---
+
+## 🔎 Why it’s not working
+
+Right now your **`Weather.jsx`** and **`Input.jsx`** don’t match up properly because:
+
+1. **Mismatch between what API returns and what you display**
+
+   * You’re trying to show `weatherData?.city_name`, but Open-Meteo’s API doesn’t give `city_name`.
+   * Instead, you need to use the geocoding result (`geocodeData.results[0].name`) and store it.
+
+2. **Daily forecast rendering issue**
+
+   * You hardcoded `days`, but your API already returns `daily.temperature_2m_max` and `daily.temperature_2m_min`.
+   * You’re not using those yet.
+
+3. **Hourly forecast mismatch**
+
+   * API gives arrays like `hourly.temperature_2m = [23, 22, 21...]` with timestamps.
+   * But you’re still using your static `hours` list.
+
+4. **Data structure mismatch**
+
+   * Example: Open-Meteo `current_weather.temperature`, but you’re trying to access `weatherData?.current_weather?.temperature` (✅ correct), but you never stored city info along with it.
+
+---
+
+## ✅ Solutions (with examples)
+
+### 1. Pass city name from `Input` → `Weather`
+
+Update your **Input.jsx** after geocoding:
+
+```jsx
+const { latitude, longitude, name, country } = geocodeData.results[0];
+
+const weatherRes = await fetch(
+  `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,precipitation,windspeed_10m&daily=temperature_2m_max,temperature_2m_min&current_weather=true&timezone=auto`
+);
+const weatherData = await weatherRes.json();
+
+// include city name
+onWeatherFetch({ ...weatherData, city_name: `${name}, ${country}` });
+```
+
+---
+
+### 2. Fix display in **Weather.jsx**
+
+Replace this:
+
+```jsx
+<h2 className="text-lg font-semibold">{weatherData?.city_name}</h2>
+<p className="text-sm text-gray-200">{weatherData.daily}</p>
+```
+
+With:
+
+```jsx
+<h2 className="text-lg font-semibold">{weatherData?.city_name}</h2>
+<p className="text-sm text-gray-200">Today’s forecast</p>
+```
+
+---
+
+### 3. Use API data for daily forecast
+
+Replace your static `days` with:
+
+```jsx
+{weatherData?.daily?.temperature_2m_max?.map((max, i) => (
+  <div
+    key={i}
+    className="bg-[#1a1a3d] rounded-xl p-4 flex flex-col items-center shadow-md hover:scale-105 transition-transform"
+  >
+    <span className="font-medium">
+      {new Date(weatherData.daily.time[i]).toLocaleDateString("en-US", { weekday: "short" })}
+    </span>
+    <span className="text-3xl my-2">🌤️</span>
+    <div className="flex gap-2 text-sm">
+      <span>{max}°</span>
+      <span className="text-gray-400">{weatherData.daily.temperature_2m_min[i]}°</span>
+    </div>
+  </div>
+))}
+```
+
+---
+
+### 4. Use API data for hourly forecast
+
+Replace your static `hours` with:
+
+```jsx
+{weatherData?.hourly?.temperature_2m?.slice(0, 8).map((temp, i) => (
+  <div
+    key={i}
+    className="flex items-center justify-between p-3 bg-[#0f0f2d] rounded-lg"
+  >
+    <span className="text-sm">
+      {new Date(weatherData.hourly.time[i]).toLocaleTimeString("en-US", { hour: "numeric" })}
+    </span>
+    <span className="text-lg">🌡️</span>
+    <span className="text-sm">{temp}°</span>
+  </div>
+))}
+```
+
+---
+
+### ✅ Final Flow Example
+
+1. Search "Lagos".
+2. Geocode finds coordinates → Weather API fetches data.
+3. `onWeatherFetch` passes `{...weatherData, city_name: "Lagos, NG"}`.
+4. `Weather.jsx` now displays:
+
+   * City name (`Lagos, NG`) ✅
+   * Current weather temp ✅
+   * Real daily highs/lows ✅
+   * Real hourly forecast ✅
+
+---
+
+👉 Question for you before I generate the **full fixed code**:
+
+Do you want me to (a) completely **replace your static days/hours with API data** (so everything is dynamic), or (b) keep your static ones as fallback until API works?
