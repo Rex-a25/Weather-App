@@ -4,7 +4,7 @@ function App() {
   return (
     <div className="">
 
-       <Nav/>
+       {/* <Nav/> */}
     <Weather/>   
     </div>
   )
