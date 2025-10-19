@@ -113,7 +113,7 @@ const Weather = () => {
       <div className="w-full lg:w-80 bg-[#1a1a3d] rounded-xl p-4 sm:p-6 shadow-lg h-fit">
         <h2 className="text-lg font-semibold mb-4">Hourly forecast</h2>
         <div className="flex flex-col gap-3">
-          {weatherData?.hourly?.temperature_2m?.slice(0, 8).map((temp, i) => (
+          {weatherData?.hourly?.temperature_2m?.slice(0, 23).map((temp, i) => (
             <div
               key={i}
               className="flex items-center justify-between p-3 bg-[#0f0f2d] rounded-lg"
